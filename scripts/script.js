@@ -36,6 +36,20 @@ $(document).ready(function () {
                     )
                 ), 'Backend из Москвы на полный день'
             )
+            const requiredSkills = [
+                {name: 'Figma', level: 6},
+                {name: 'Photoshop', level: 6}
+            ];
+            outputPersonList(specialistSkillLevelSort(persons, requiredSkills), 'Photoshop and Figma level');
+
+            const rs = [
+                'Figma',
+                'Angular',
+                'Go',
+            ]
+
+            bestCommand(persons, rs);
+
 
         })
         .catch(error => {
@@ -52,7 +66,7 @@ $(document).ready(function () {
         return `${this.personal.firstName} ${this.personal.lastName}, ${city ? city.name : 'Unknown City'}`;
     }
 
-    function outputPersonList(listPerson, message){
+    function outputPersonList(listPerson, message = 'task') {
         console.log(message);
         listPerson.forEach((person) => {
             console.log(getInfo.call(person))
@@ -62,7 +76,7 @@ $(document).ready(function () {
     /** Найдите среди пользователей всех дизайнеров,
      * которые владеют Figma и выведите данные о них в консоль с помощью getInfo.*/
     function specialization(persons, specializations, specialization) {
-        let specializationSearchId = specializations
+        const specializationSearchId = specializations
             .find(item => item.name.toLowerCase() === specialization)
             .id;
         return persons.filter(person => {
@@ -70,8 +84,8 @@ $(document).ready(function () {
         });
     }
 
-    function specializationSkill(specializations, skill) {
-        return specializations.filter(person => {
+    function specializationSkill(listPerson, skill) {
+        return listPerson.filter(person => {
             if (person.skills.find(item => item.name.toLowerCase() === skill.toLowerCase()))
                 return person;
         });
@@ -93,15 +107,16 @@ $(document).ready(function () {
             console.log('No developer found with the specified skill.');
         }
     }
-/** Проверьте, все ли пользователи старше 18 лет. Выведите результат проверки в консоль.*/
-function checkAge(persons, controlAge){
-    isAge = false;
-    persons.forEach(person => {
-        if (calculateAge(person.personal.birthday) <= controlAge) isAge = true;
-    })
-    console.log(isAge? 'Не все пользователи старше ' + controlAge + ' лет': 'Все пользователи старше ' + controlAge + ' лет')
 
-}
+    /** Проверьте, все ли пользователи старше 18 лет. Выведите результат проверки в консоль.*/
+    function checkAge(persons, controlAge) {
+        let isAge = false;
+        persons.forEach(person => {
+            if (calculateAge(person.personal.birthday) <= controlAge) isAge = true;
+        })
+        console.log(isAge ? 'Не все пользователи старше ' + controlAge + ' лет' : 'Все пользователи старше ' + controlAge + ' лет')
+
+    }
 
     function calculateAge(birthday) {
 
@@ -120,32 +135,76 @@ function checkAge(persons, controlAge){
 
         return age;
     }
-/**Найдите всех backend-разработчиков из Москвы, которые ищут работу на полный день
- * и отсортируйте их в порядке возрастания зарплатных ожиданий. */
+
+    /**Найдите всех backend-разработчиков из Москвы, которые ищут работу на полный день
+     * и отсортируйте их в порядке возрастания зарплатных ожиданий. */
 
 
-function cityPersonal(listPersonal, cities, cityName) {
-    let cityId = cities.find(item => item.name === cityName).id;
-    return listPersonal.filter(person => {
-        return person.personal.locationId === cityId;
-    });
-}
-
-function salaryPersonalSorted (listPersonal) {
-    function salaryPerson(person){
-        return +(person.request.find(item => item.name === 'Зарплата').value);
+    function cityPersonal(listPersonal, cities, cityName) {
+        const cityId = cities.find(item => item.name === cityName).id;
+        return listPersonal.filter(person => {
+            return person.personal.locationId === cityId;
+        });
     }
-    return listPersonal.sort((a, b) => salaryPerson(a) - salaryPerson(b));
-}
 
-function timeEmployment(listPersonal, type) {
+    function salaryPersonalSorted(listPersonal) {
+        function salaryPerson(person) {
+            return +(person.request.find(item => item.name === 'Зарплата').value);
+        }
 
-    return listPersonal.filter(person => {
-        return person.request.find(item => item.name === 'Тип занятости').value === type;
-    })
-}
+        return listPersonal.sort((a, b) => salaryPerson(a) - salaryPerson(b));
+    }
+
+    function timeEmployment(listPersonal, type) {
+        return listPersonal.filter(person => {
+            return person.request.find(item => item.name === 'Тип занятости').value === type;
+        })
+    }
+
+    /** Найдите всех дизайнеров, которые владеют Photoshop и Figma одновременно на уровне не ниже 6 баллов.*/
 
 
+    function specialistSkillLevelSort(listPerson, requiredSkills) {
 
+        return listPerson.filter(person => {
+            return checkSkills(person, requiredSkills);
+        })
+
+        function checkSkills(person, requiredSkills) {
+            return requiredSkills.every(reqSkill =>
+                person.skills.some(skill =>
+                    skill.name.toLowerCase() === reqSkill.name.toLowerCase() && skill.level >= reqSkill.level
+                )
+            );
+        }
+    }
+    /** Соберите команду для разработки проекта:
+     - дизайнера, который лучше всех владеет Figma
+     - frontend разработчика с самым высоким уровнем знания Angular
+     - лучшего backend разработчика на Go*/
+
+    function sortCandidatesByLevelSkill(candidates, requiredSkill) {
+        candidates.sort((a, b) => {
+            const skillA = a.skills.find(skill => skill.name.toLowerCase() === requiredSkill.toLowerCase());
+            const skillB = b.skills.find(skill => skill.name.toLowerCase() === requiredSkill.toLowerCase());
+
+            const levelA = skillA ? skillA.level : 0;
+            const levelB = skillB ? skillB.level : 0;
+
+            return levelB - levelA;
+        });
+        return candidates[0];
+    }
+
+    function bestCommand(persons, requiredSkills) {
+        console.log('Best command');
+        requiredSkills.forEach(rs => {
+            console.log(getInfo.call(
+                sortCandidatesByLevelSkill(
+                    specializationSkill(persons, rs)
+                    , rs)
+            ));
+        })
+    }
 
 });
